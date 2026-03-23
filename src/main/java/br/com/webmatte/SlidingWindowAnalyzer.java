@@ -1,0 +1,301 @@
+package br.com.webmatte;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SlidingWindowAnalyzer {
+    private static final Logger log = LoggerFactory.getLogger(SlidingWindowAnalyzer.class);
+    private String sequence;
+    private int windowSize;
+    private int stepSize;
+    private List<WindowResult> results;
+
+    public SlidingWindowAnalyzer(String sequence, int windowSize, int stepSize) {
+        this.sequence = sequence.toUpperCase();
+        this.windowSize = windowSize;
+        this.stepSize = stepSize;
+        this.results = new ArrayList<>();
+        analyze();
+    }
+
+    // Método estático para análise rápida
+    public static void analyzeSequence(String sequence, int windowSize) {
+        SlidingWindowAnalyzer analyzer = new SlidingWindowAnalyzer(sequence, windowSize, windowSize / 2);
+        analyzer.printSlidingWindowReport();
+    }
+
+    private void analyze() {
+        for (int i = 0; i <= sequence.length() - windowSize; i += stepSize) {
+            int endPos = Math.min(i + windowSize, sequence.length());
+            String windowSeq = sequence.substring(i, endPos);
+
+            // Apenas processa janelas com nucleotídeos válidos
+            if (containsValidNucleotides(windowSeq)) {
+                results.add(new WindowResult(i, endPos - 1, windowSeq));
+            }
+        }
+    }
+
+    private boolean containsValidNucleotides(String windowSeq) {
+        for (char c : windowSeq.toCharArray()) {
+            if (c == 'A' || c == 'T' || c == 'C' || c == 'G') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void printSlidingWindowReport() {
+        log.info("=== ANÁLISE DE SLIDING WINDOW ===");
+        log.info("Tamanho da sequência: {}", sequence.length());
+        log.info("Tamanho da janela: {}", windowSize);
+        log.info("Tamanho do passo: {}", stepSize);
+        log.info("Janelas analisadas: {}", results.size());
+        log.info("");
+
+        if (results.isEmpty()) {
+            log.info("Nenhuma janela válida encontrada para análise.");
+            return;
+        }
+
+        // Estatísticas gerais
+        double avgGC = results.stream().mapToDouble(WindowResult::getGcContent).average().orElse(0.0);
+        double maxGC = results.stream().mapToDouble(WindowResult::getGcContent).max().orElse(0.0);
+        double minGC = results.stream().mapToDouble(WindowResult::getGcContent).min().orElse(0.0);
+
+        log.info("Estatísticas de GC Content:");
+        log.info("Média: {}%", String.format("%.1f", avgGC));
+        log.info("Máximo: {}%", String.format("%.1f", maxGC));
+        log.info("Mínimo: {}%", String.format("%.1f", minGC));
+        log.info("Variação: {}%", String.format("%.1f", maxGC - minGC));
+        log.info("");
+
+        // Regiões de interesse
+        findRegionsOfInterest();
+
+        // Primeiras janelas (amostra)
+        log.info("Amostra de janelas (primeiras 10):");
+        for (int i = 0; i < Math.min(10, results.size()); i++) {
+            log.info("{}. {}", (i + 1), results.get(i).toString());
+        }
+
+        if (results.size() > 10) {
+            log.info("... ({} janelas adicionais)", (results.size() - 10));
+        }
+        log.info("");
+    }
+
+    private void findRegionsOfInterest() {
+        log.info("Regiões de interesse:");
+
+        // Encontra regiões com GC alto (> 60%)
+        List<WindowResult> highGCRegions = new ArrayList<>();
+        List<WindowResult> lowGCRegions = new ArrayList<>();
+
+        for (WindowResult result : results) {
+            if (result.getGcContent() > 60.0) {
+                highGCRegions.add(result);
+            } else if (result.getGcContent() < 30.0) {
+                lowGCRegions.add(result);
+            }
+        }
+
+        log.info("Regiões com GC alto (>60%): {}", highGCRegions.size());
+        if (!highGCRegions.isEmpty()) {
+            log.info("  Exemplos:");
+            for (int i = 0; i < Math.min(3, highGCRegions.size()); i++) {
+                WindowResult result = highGCRegions.get(i);
+                log.info("    Posição {}-{}: {}%",
+                        result.getStartPosition(), result.getEndPosition(), String.format("%.1f", result.getGcContent()));
+            }
+        }
+
+        log.info("Regiões com GC baixo (<30%): {}", lowGCRegions.size());
+        if (!lowGCRegions.isEmpty()) {
+            log.info("  Exemplos:");
+            for (int i = 0; i < Math.min(3, lowGCRegions.size()); i++) {
+                WindowResult result = lowGCRegions.get(i);
+                log.info("    Posição {}-{}: {}%",
+                        result.getStartPosition(), result.getEndPosition(), String.format("%.1f", result.getGcContent()));
+            }
+        }
+        log.info("");
+    }
+
+    // Método para encontrar regiões estáveis vs instáveis
+    public void findStabilityRegions() {
+        log.info("=== ANÁLISE DE ESTABILIDADE ===");
+
+        double avgGC = results.stream().mapToDouble(WindowResult::getGcContent).average().orElse(0.0);
+
+        List<WindowResult> stableRegions = new ArrayList<>();
+        List<WindowResult> unstableRegions = new ArrayList<>();
+
+        for (WindowResult result : results) {
+            double deviation = Math.abs(result.getGcContent() - avgGC);
+            if (deviation < 5.0) {
+                stableRegions.add(result);
+            } else if (deviation > 15.0) {
+                unstableRegions.add(result);
+            }
+        }
+
+        log.info("GC médio global: {}%", String.format("%.1f", avgGC));
+        log.info("Regiões estáveis (desvio < 5%): {}", stableRegions.size());
+        log.info("Regiões instáveis (desvio > 15%): {}", unstableRegions.size());
+
+        if (!unstableRegions.isEmpty()) {
+            log.info("Regiões instáveis (potenciais hotspots):");
+            for (int i = 0; i < Math.min(5, unstableRegions.size()); i++) {
+                WindowResult result = unstableRegions.get(i);
+                double deviation = Math.abs(result.getGcContent() - avgGC);
+                log.info("  Posição {}-{}: {}% (desvio: {}%)",
+                        result.getStartPosition(), result.getEndPosition(),
+                        String.format("%.1f", result.getGcContent()), String.format("%.1f", deviation));
+            }
+        }
+        log.info("");
+    }
+
+    // Método para detectar padrões de composição
+    public void detectCompositionPatterns() {
+        log.info("=== PADRÕES DE COMPOSIÇÃO ===");
+
+        // Analisa variação ao longo da sequência
+        if (results.size() < 2) return;
+
+        List<Double> gcValues = new ArrayList<>();
+        for (WindowResult result : results) {
+            gcValues.add(result.getGcContent());
+        }
+
+        // Detecta tendências
+        int increasingCount = 0;
+        int decreasingCount = 0;
+
+        for (int i = 1; i < gcValues.size(); i++) {
+            if (gcValues.get(i) > gcValues.get(i - 1)) {
+                increasingCount++;
+            } else if (gcValues.get(i) < gcValues.get(i - 1)) {
+                decreasingCount++;
+            }
+        }
+
+        log.info("Tendências de variação:");
+        log.info("Aumentos: {}", increasingCount);
+        log.info("Diminuições: {}", decreasingCount);
+
+        if (increasingCount > decreasingCount * 1.5) {
+            log.info("Padrão detectado: Tendência de aumento de GC ao longo da sequência");
+        } else if (decreasingCount > increasingCount * 1.5) {
+            log.info("Padrão detectado: Tendência de diminuição de GC ao longo da sequência");
+        } else {
+            log.info("Padrão detectado: Variação estável de GC ao longo da sequência");
+        }
+        log.info("");
+    }
+
+    // Getters
+    public List<WindowResult> getResults() {
+        return new ArrayList<>(results);
+    }
+
+    public int getWindowSize() {
+        return windowSize;
+    }
+
+    public int getStepSize() {
+        return stepSize;
+    }
+
+    public static class WindowResult {
+        private int startPosition;
+        private int endPosition;
+        private String windowSequence;
+        private double gcContent;
+        private int length;
+        private int aCount, tCount, cCount, gCount;
+
+        public WindowResult(int startPosition, int endPosition, String windowSequence) {
+            this.startPosition = startPosition;
+            this.endPosition = endPosition;
+            this.windowSequence = windowSequence;
+            this.length = windowSequence.length();
+            calculateStats();
+        }
+
+        private void calculateStats() {
+            aCount = tCount = cCount = gCount = 0;
+
+            for (char nucleotide : windowSequence.toCharArray()) {
+                switch (nucleotide) {
+                    case 'A':
+                        aCount++;
+                        break;
+                    case 'T':
+                        tCount++;
+                        break;
+                    case 'C':
+                        cCount++;
+                        break;
+                    case 'G':
+                        gCount++;
+                        break;
+                }
+            }
+
+            int totalValid = aCount + tCount + cCount + gCount;
+            if (totalValid > 0) {
+                gcContent = (double) (cCount + gCount) / totalValid * 100.0;
+            } else {
+                gcContent = 0.0;
+            }
+        }
+
+        public int getStartPosition() {
+            return startPosition;
+        }
+
+        public int getEndPosition() {
+            return endPosition;
+        }
+
+        public String getWindowSequence() {
+            return windowSequence;
+        }
+
+        public double getGcContent() {
+            return gcContent;
+        }
+
+        public int getLength() {
+            return length;
+        }
+
+        public int getACount() {
+            return aCount;
+        }
+
+        public int getTCount() {
+            return tCount;
+        }
+
+        public int getCCount() {
+            return cCount;
+        }
+
+        public int getGCount() {
+            return gCount;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Posição %d-%d: GC=%.1f%% (A:%d T:%d C:%d G:%d)",
+                    startPosition, endPosition, gcContent,
+                    aCount, tCount, cCount, gCount);
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "analysis_date": "2026-03-23",
+  "total_sequences": 1,
+  "sequences": [
+    {
+      "sequence_id": "NG_005905.2 Homo sapiens BRCA1 DNA repair associated (BRCA1), RefSeqGene (LRG_292) on chromosome 17",
+      "length": 193689,
+      "nucleotide_counts": {
+        "A": 53732,
+        "T": 52696,
+        "C": 43262,
+        "G": 43999,
+        "N": 0
+      },
+      "gc_content": 45,05,
+      "orf_count": 61,
+      "start_codon_count": 2890,
+      "stop_codon_count": 9339,
+      "avg_protein_length": 0,0,
+      "mutation_count": 0,
+      "ambiguous_percentage": 0,00
+    }
+  ],
+  "global_statistics": {
+    "average_length": 193689,0,
+    "average_gc_content": 45,05,
+    "total_orfs": 61,
+    "total_mutations": 0
+  }
+}

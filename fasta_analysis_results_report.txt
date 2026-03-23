@@ -1,0 +1,25 @@
+=== RELATÓRIO DE ANÁLISE FASTA ===
+Data: 2026-03-23
+Total de sequências analisadas: 1
+
+ESTATÍSTICAS GLOBAIS:
+Comprimento total: 193.689 nucleotídeos
+Comprimento médio: 193689,0 nucleotídeos
+GC content médio: 45,05%
+Total de ORFs: 61
+Total de mutações: 0
+
+MAIORES SEQUÊNCIAS:
+NG_005905.2 Homo sapiens BRCA1 DNA repair associated (BRCA1), RefSeqGene (LRG_292) on chromosome 17: 193.689 nucleotídeos (GC: 45,1%)
+
+MAIOR GC CONTENT:
+NG_005905.2 Homo sapiens BRCA1 DNA repair associated (BRCA1), RefSeqGene (LRG_292) on chromosome 17: 45,05% (193.689 nucleotídeos)
+
+DETALHES INDIVIDUAIS:
+
+NG_005905.2 Homo sapiens BRCA1 DNA repair associated (BRCA1), RefSeqGene (LRG_292) on chromosome 17:
+  Comprimento: 193.689 nucleotídeos
+  GC Content: 45,05%
+  Nucleotídeos: A=53732, T=52696, C=43262, G=43999, N=0
+  ORFs: 61
+  Códons start: 2890, stop: 9339

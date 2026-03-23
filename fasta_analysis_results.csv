@@ -1,0 +1,2 @@
+Sequence_ID,Length,A_Count,T_Count,C_Count,G_Count,N_Count,GC_Content,ORF_Count,Start_Codon_Count,Stop_Codon_Count,Avg_Protein_Length,Mutation_Count,Ambiguous_Percentage
+NG_005905.2 Homo sapiens BRCA1 DNA repair associated (BRCA1), RefSeqGene (LRG_292) on chromosome 17,193689,53732,52696,43262,43999,0,45,05,61,2890,9339,0,0,0,0,00

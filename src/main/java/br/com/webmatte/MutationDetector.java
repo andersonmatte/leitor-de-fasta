@@ -33,7 +33,8 @@ public class MutationDetector {
     private void detectMutations() {
         int refLength = referenceSequence.length();
         int mutLength = mutatedSequence.length();
-        int i = 0, j = 0;
+        int i = 0;
+        int j = 0;
 
         while (i < refLength && j < mutLength) {
             char refBase = referenceSequence.charAt(i);
@@ -50,8 +51,7 @@ public class MutationDetector {
 
                     // Avança os ponteiros baseado no tipo de mutação
                     switch (mutation.getType()) {
-                        case SNP:
-                        case SUBSTITUTION:
+                        case SNP, SUBSTITUTION:
                             i++;
                             j++;
                             break;
@@ -136,7 +136,11 @@ public class MutationDetector {
         }
 
         // Contagem por tipo
-        int snpCount = 0, insertionCount = 0, deletionCount = 0, substitutionCount = 0;
+        int snpCount = 0;
+        int insertionCount = 0;
+        int deletionCount = 0;
+        int substitutionCount = 0;
+        int indelCount = 0;
 
         for (Mutation mutation : mutations) {
             switch (mutation.getType()) {
@@ -152,6 +156,9 @@ public class MutationDetector {
                 case SUBSTITUTION:
                     substitutionCount++;
                     break;
+                case INDEL:
+                    indelCount++;
+                    break;
             }
         }
 
@@ -160,12 +167,13 @@ public class MutationDetector {
         log.info("Inserções: {}", insertionCount);
         log.info("Deleções: {}", deletionCount);
         log.info("Substituições: {}", substitutionCount);
+        log.info("Indels: {}", indelCount);
         log.info("");
 
         // Detalhes das mutações
         log.info("Detalhes das mutações:");
         for (int i = 0; i < mutations.size(); i++) {
-            log.info("{}. {}", (i + 1), mutations.get(i).toString());
+            log.info("{}. {}", (i + 1), mutations.get(i));
         }
         log.info("");
 
@@ -180,7 +188,9 @@ public class MutationDetector {
 
         // Taxa de mutação
         double mutationRate = (double) mutations.size() / referenceSequence.length() * 100;
-        log.info("Taxa de mutação: {}%", String.format("%.4f", mutationRate));
+        if (log.isInfoEnabled()) {
+            log.info(String.format("Taxa de mutação: %.4f%%", mutationRate));
+        }
 
         // Tipos de substituições mais comuns (para SNPs)
         List<String> substitutionTypes = new ArrayList<>();
@@ -237,6 +247,7 @@ public class MutationDetector {
         private String reference;
         private String alternative;
         private String context;
+
         public Mutation(Type type, int position, String reference, String alternative, String sequence) {
             this.type = type;
             this.position = position;

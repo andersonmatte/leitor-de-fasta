@@ -50,15 +50,15 @@ public class MotifFinder {
         log.info("Posições encontradas:");
         for (int i = 0; i < motifMatches.size(); i++) {
             MotifMatch match = motifMatches.get(i);
-            log.info("{}. {}", (i + 1), match.toString());
+            log.info("{}. {}", (i + 1), match);
         }
         log.info("");
 
         // Estatísticas das ocorrências
-        analyzeMotifDistribution(motifMatches, motif);
+        analyzeMotifDistribution(motifMatches);
     }
 
-    private void analyzeMotifDistribution(List<MotifMatch> matches, String motif) {
+    private void analyzeMotifDistribution(List<MotifMatch> matches) {
         if (matches.isEmpty()) return;
 
         log.info("Análise de distribuição:");
@@ -70,12 +70,16 @@ public class MotifFinder {
                 totalDistance += matches.get(i).getPosition() - matches.get(i - 1).getPosition();
             }
             double avgDistance = (double) totalDistance / (matches.size() - 1);
-            log.info("Distância média entre ocorrências: {} nucleotídeos", String.format("%.1f", avgDistance));
+            if (log.isInfoEnabled()) {
+                log.info("Distância média entre ocorrências: {} nucleotídeos", String.format("%.1f", avgDistance));
+            }
         }
 
         // Densidade (ocorrências por 1000 nucleotídeos)
         double density = (double) matches.size() / sequence.length() * 1000;
-        log.info("Densidade: {} ocorrências por 1000 nucleotídeos", String.format("%.2f", density));
+        if (log.isInfoEnabled()) {
+            log.info("Densidade: {} ocorrências por 1000 nucleotídeos", String.format("%.2f", density));
+        }
 
         // Primeira e última ocorrência
         if (!matches.isEmpty()) {
@@ -138,19 +142,19 @@ public class MotifFinder {
         log.info("=== BUSCA POR MÚLTIPLOS MOTIFS ===");
 
         for (String motif : motifs) {
-            List<MotifMatch> matches = findMotif(motif);
-            log.info("{}: {} ocorrências", motif, matches.size());
+            List<MotifMatch> motifMatches = findMotif(motif);
+            log.info("{}: {} ocorrências", motif, motifMatches.size());
 
-            if (!matches.isEmpty()) {
+            if (!motifMatches.isEmpty()) {
                 log.info("  Posições: ");
-                for (int i = 0; i < Math.min(matches.size(), 10); i++) {
-                    log.info("{}", matches.get(i).getPosition());
-                    if (i < Math.min(matches.size(), 10) - 1) {
+                for (int i = 0; i < Math.min(motifMatches.size(), 10); i++) {
+                    log.info("{}", motifMatches.get(i).getPosition());
+                    if (i < Math.min(motifMatches.size(), 10) - 1) {
                         log.info(", ");
                     }
                 }
-                if (matches.size() > 10) {
-                    log.info(" ... ({} mais)", (matches.size() - 10));
+                if (motifMatches.size() > 10) {
+                    log.info(" ... ({} mais)", (motifMatches.size() - 10));
                 }
             }
         }

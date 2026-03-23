@@ -47,31 +47,81 @@ public class ORFDetector {
     }
 
     private void findORFsInFrame(ORF.Frame frame, int offset) {
-        for (int i = offset; i <= sequence.length() - 3; i += 3) {
-            String codon = sequence.substring(i, i + 3);
 
-            if (codon.equals("ATG")) { // Start codon
-                // Procura o próximo códon de parada
-                int stopPos = findStopCodon(i + 3);
+        int i = offset;
 
-                if (stopPos != -1) {
-                    int orfLength = stopPos - i + 3;
-                    if (orfLength >= minORFLength) {
-                        String orfSequence = sequence.substring(i, stopPos + 3);
-                        orfs.add(new ORF(frame, i, stopPos + 2, orfSequence, true));
-                        i = stopPos + 3; // Pula o ORF encontrado
-                    }
-                } else {
-                    // ORF incompleto (sem códon de parada)
-                    int remainingLength = sequence.length() - i;
-                    if (remainingLength >= minORFLength) {
-                        String orfSequence = sequence.substring(i);
-                        orfs.add(new ORF(frame, i, sequence.length() - 1, orfSequence, false));
-                    }
-                    break;
-                }
+        while (i <= sequence.length() - 3) {
+
+            if (!isStartCodon(i)) {
+                i += 3;
+                continue;
             }
+
+            int stopPos = findStopCodon(i + 3);
+
+            if (stopPos == -1) {
+                handleIncompleteORF(frame, i);
+                return;
+            }
+
+            int nextPosition = handleCompleteORF(frame, i, stopPos);
+
+            i = nextPosition;
         }
+    }
+
+    private boolean isStartCodon(int position) {
+        return sequence.startsWith("ATG", position);
+    }
+
+    private int handleCompleteORF(ORF.Frame frame,
+                                  int startPos,
+                                  int stopPos) {
+
+        int orfLength = stopPos - startPos + 3;
+
+        if (orfLength < minORFLength) {
+            return startPos + 3;
+        }
+
+        String orfSequence =
+                sequence.substring(startPos, stopPos + 3);
+
+        orfs.add(
+                new ORF(
+                        frame,
+                        startPos,
+                        stopPos + 2,
+                        orfSequence,
+                        true
+                )
+        );
+
+        return stopPos + 3;
+    }
+
+    private void handleIncompleteORF(ORF.Frame frame,
+                                     int startPos) {
+
+        int remainingLength =
+                sequence.length() - startPos;
+
+        if (remainingLength < minORFLength) {
+            return;
+        }
+
+        String orfSequence =
+                sequence.substring(startPos);
+
+        orfs.add(
+                new ORF(
+                        frame,
+                        startPos,
+                        sequence.length() - 1,
+                        orfSequence,
+                        false
+                )
+        );
     }
 
     private int findStopCodon(int startPos) {
@@ -103,7 +153,8 @@ public class ORFDetector {
     }
 
     private void findORFsInReverseFrame(ORF.Frame frame, int offset, String reverseComplement) {
-        for (int i = offset; i <= reverseComplement.length() - 3; i += 3) {
+        int i = offset;
+        while (i <= reverseComplement.length() - 3) {
             String codon = reverseComplement.substring(i, i + 3);
 
             if (codon.equals("ATG")) { // Start codon
@@ -121,9 +172,11 @@ public class ORFDetector {
 
                         orfs.add(new ORF(frame, originalStart, originalEnd, orfSequence, true));
                         i = stopPos + 3;
+                        continue;
                     }
                 }
             }
+            i += 3;
         }
     }
 
@@ -238,7 +291,7 @@ public class ORFDetector {
             int minLength = orfs.stream().mapToInt(ORF::getLength).min().orElse(0);
 
             log.info("Estatísticas de tamanho:");
-            log.info("Comprimento médio: {} nucleotídeos", String.format("%.1f", avgLength));
+            log.info("Comprimento médio: {} nucleotídeos", avgLength);
             log.info("Comprimento máximo: {} nucleotídeos", maxLength);
             log.info("Comprimento mínimo: {} nucleotídeos", minLength);
             log.info("");
@@ -249,7 +302,7 @@ public class ORFDetector {
         orfs.stream()
                 .sorted((a, b) -> Integer.compare(b.getLength(), a.getLength()))
                 .limit(10)
-                .forEach(orf -> log.info("  {}", orf.toString()));
+                .forEach(orf -> log.info("  {}", orf));
         log.info("");
 
         // Análise de proteínas potenciais
@@ -276,10 +329,11 @@ public class ORFDetector {
                     case 'H':
                         histidineCount++;
                         break;
-                    case 'F':
-                    case 'W':
-                    case 'Y':
+                    case 'F', 'W', 'Y':
                         aromaticCount++;
+                        break;
+                    default:
+                        // Other amino acids are not counted for this analysis
                         break;
                 }
             }
@@ -313,6 +367,7 @@ public class ORFDetector {
         private String nucleotideSequence;
         private String proteinSequence;
         private boolean isComplete;
+
         public ORF(Frame frame, int startPosition, int endPosition, String sequence, boolean isComplete) {
             this.frame = frame;
             this.startPosition = startPosition;

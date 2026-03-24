@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SlidingWindowAnalyzer {
+
     private static final Logger log = LoggerFactory.getLogger(SlidingWindowAnalyzer.class);
-    private String sequence;
-    private int windowSize;
-    private int stepSize;
-    private List<WindowResult> results;
+    private final String sequence;
+    private final int windowSize;
+    private final int stepSize;
+    private final List<WindowResult> results;
 
     public SlidingWindowAnalyzer(String sequence, int windowSize, int stepSize) {
         this.sequence = sequence.toUpperCase();
@@ -67,10 +68,10 @@ public class SlidingWindowAnalyzer {
         double minGC = results.stream().mapToDouble(WindowResult::getGcContent).min().orElse(0.0);
 
         log.info("Estatísticas de GC Content:");
-        log.info("Média: {}%", String.format("%.1f", avgGC));
-        log.info("Máximo: {}%", String.format("%.1f", maxGC));
-        log.info("Mínimo: {}%", String.format("%.1f", minGC));
-        log.info("Variação: {}%", String.format("%.1f", maxGC - minGC));
+        log.info("Média: {}%", avgGC);
+        log.info("Máximo: {}%", maxGC);
+        log.info("Mínimo: {}%", minGC);
+        log.info("Variação: {}%", maxGC - minGC);
         log.info("");
 
         // Regiões de interesse
@@ -79,7 +80,7 @@ public class SlidingWindowAnalyzer {
         // Primeiras janelas (amostra)
         log.info("Amostra de janelas (primeiras 10):");
         for (int i = 0; i < Math.min(10, results.size()); i++) {
-            log.info("{}. {}", (i + 1), results.get(i).toString());
+            log.info("{}. {}", (i + 1), results.get(i));
         }
 
         if (results.size() > 10) {
@@ -109,7 +110,7 @@ public class SlidingWindowAnalyzer {
             for (int i = 0; i < Math.min(3, highGCRegions.size()); i++) {
                 WindowResult result = highGCRegions.get(i);
                 log.info("    Posição {}-{}: {}%",
-                        result.getStartPosition(), result.getEndPosition(), String.format("%.1f", result.getGcContent()));
+                        result.getStartPosition(), result.getEndPosition(), result.getGcContent());
             }
         }
 
@@ -119,7 +120,7 @@ public class SlidingWindowAnalyzer {
             for (int i = 0; i < Math.min(3, lowGCRegions.size()); i++) {
                 WindowResult result = lowGCRegions.get(i);
                 log.info("    Posição {}-{}: {}%",
-                        result.getStartPosition(), result.getEndPosition(), String.format("%.1f", result.getGcContent()));
+                        result.getStartPosition(), result.getEndPosition(), result.getGcContent());
             }
         }
         log.info("");
@@ -143,7 +144,7 @@ public class SlidingWindowAnalyzer {
             }
         }
 
-        log.info("GC médio global: {}%", String.format("%.1f", avgGC));
+        log.info("GC médio global: {}%", avgGC);
         log.info("Regiões estáveis (desvio < 5%): {}", stableRegions.size());
         log.info("Regiões instáveis (desvio > 15%): {}", unstableRegions.size());
 
@@ -154,7 +155,7 @@ public class SlidingWindowAnalyzer {
                 double deviation = Math.abs(result.getGcContent() - avgGC);
                 log.info("  Posição {}-{}: {}% (desvio: {}%)",
                         result.getStartPosition(), result.getEndPosition(),
-                        String.format("%.1f", result.getGcContent()), String.format("%.1f", deviation));
+                        result.getGcContent(), deviation);
             }
         }
         log.info("");
@@ -212,12 +213,15 @@ public class SlidingWindowAnalyzer {
     }
 
     public static class WindowResult {
-        private int startPosition;
-        private int endPosition;
-        private String windowSequence;
+        private final int startPosition;
+        private final int endPosition;
+        private final String windowSequence;
         private double gcContent;
-        private int length;
-        private int aCount, tCount, cCount, gCount;
+        private final int length;
+        private int aCount;
+        private int tCount;
+        private int cCount;
+        private int gCount;
 
         public WindowResult(int startPosition, int endPosition, String windowSequence) {
             this.startPosition = startPosition;
@@ -243,6 +247,9 @@ public class SlidingWindowAnalyzer {
                         break;
                     case 'G':
                         gCount++;
+                        break;
+                    default:
+                        // Handle unexpected characters - could log or count them
                         break;
                 }
             }

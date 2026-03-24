@@ -61,12 +61,14 @@ public class SequenceStats {
         log.info("N (ambíguos): {}", nucleotideCounts.get('N'));
         log.info("");
 
-        log.info("GC Content: {}%", String.format("%.1f", gcContent));
+        if (log.isInfoEnabled()) {
+            log.info("GC Content: {}%", String.format("%.1f", gcContent));
+        }
         log.info("");
 
         // Frequência relativa
         log.info("Frequência Relativa:");
-        if (length > 0) {
+        if (length > 0 && log.isInfoEnabled()) {
             log.info("A: {}%", String.format("%.1f", (double) nucleotideCounts.get('A') / length * 100));
             log.info("T: {}%", String.format("%.1f", (double) nucleotideCounts.get('T') / length * 100));
             log.info("C: {}%", String.format("%.1f", (double) nucleotideCounts.get('C') / length * 100));

@@ -1,4 +1,4 @@
-package br.com.webmatte;
+package br.com.webmatte.infra;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,11 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SequenceStats {
+
     private static final Logger log = LoggerFactory.getLogger(SequenceStats.class);
-    private String sequenceId;
-    private String sequence;
-    private int length;
-    private Map<Character, Integer> nucleotideCounts;
+    private final String sequenceId;
+    private final String sequence;
+    private final int length;
+    private final Map<Character, Integer> nucleotideCounts;
     private double gcContent;
 
     public SequenceStats(String sequenceId, String sequence) {
@@ -29,16 +30,13 @@ public class SequenceStats {
         nucleotideCounts.put('C', 0);
         nucleotideCounts.put('G', 0);
         nucleotideCounts.put('N', 0);
-
         // Count nucleotides
         for (char nucleotide : sequence.toCharArray()) {
             nucleotideCounts.put(nucleotide, nucleotideCounts.getOrDefault(nucleotide, 0) + 1);
         }
-
         // Calculate GC content
         int totalValid = nucleotideCounts.get('A') + nucleotideCounts.get('T') +
                 nucleotideCounts.get('C') + nucleotideCounts.get('G');
-
         if (totalValid > 0) {
             int gcCount = nucleotideCounts.get('G') + nucleotideCounts.get('C');
             gcContent = (double) gcCount / totalValid * 100.0;
@@ -51,21 +49,15 @@ public class SequenceStats {
         log.info("=== ESTATÍSTICAS BÁSICAS DA SEQUÊNCIA ===");
         log.info("Sequence ID: {}", sequenceId);
         log.info("Length: {}", length);
-        log.info("");
-
         log.info("Contagem de Nucleotídeos:");
         log.info("A: {}", nucleotideCounts.get('A'));
         log.info("T: {}", nucleotideCounts.get('T'));
         log.info("C: {}", nucleotideCounts.get('C'));
         log.info("G: {}", nucleotideCounts.get('G'));
         log.info("N (ambíguos): {}", nucleotideCounts.get('N'));
-        log.info("");
-
         if (log.isInfoEnabled()) {
             log.info("GC Content: {}%", String.format("%.1f", gcContent));
         }
-        log.info("");
-
         // Frequência relativa
         log.info("Frequência Relativa:");
         if (length > 0 && log.isInfoEnabled()) {
@@ -75,7 +67,6 @@ public class SequenceStats {
             log.info("G: {}%", String.format("%.1f", (double) nucleotideCounts.get('G') / length * 100));
             log.info("N: {}%", String.format("%.1f", (double) nucleotideCounts.get('N') / length * 100));
         }
-        log.info("");
     }
 
     // Getters
@@ -98,4 +89,5 @@ public class SequenceStats {
     public double getGcContent() {
         return gcContent;
     }
+
 }

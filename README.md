@@ -81,7 +81,7 @@ mvn exec:java -Dexec.mainClass="br.com.webmatte.App"
 #### 1. Modo Interativo (Recomendado)
 
 ```bash
-java -cp "target/classes;dependencias/*" br.com.webmatte.FastaAnalyzer
+java -cp "target/classes;dependencias/*" br.com.webmatte.analyzer.FastaAnalyzer
 ```
 
 O programa apresentará um menu com as seguintes opções:
@@ -96,10 +96,10 @@ O programa apresentará um menu com as seguintes opções:
 
 ```bash
 # Análise completa
-java -cp "target/classes;dependencias/*" br.com.webmatte.FastaAnalyzer arquivo.fasta --all
+java -cp "target/classes;dependencias/*" br.com.webmatte.analyzer.FastaAnalyzer arquivo.fasta --all
 
 # Análise com exportação
-java -cp "target/classes;dependencias/*" br.com.webmatte.FastaAnalyzer arquivo.fasta --all resultados
+java -cp "target/classes;dependencias/*" br.com.webmatte.analyzer.FastaAnalyzer arquivo.fasta --all resultados
 ```
 
 #### 3. Usando a Classe Principal
@@ -249,7 +249,7 @@ Padrões de sequência com função biológica:
    ```
    **Solução**: Aumente a memória JVM:
    ```bash
-   java -Xmx4g -cp "target/classes;dependencias/*" br.com.webmatte.FastaAnalyzer
+   java -Xmx4g -cp "target/classes;dependencias/*" br.com.webmatte.analyzer.FastaAnalyzer
    ```
 
 3. **Sequência muito grande**

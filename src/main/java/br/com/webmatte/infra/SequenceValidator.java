@@ -1,4 +1,4 @@
-package br.com.webmatte;
+package br.com.webmatte.infra;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 public class SequenceValidator {
+
     private static final Logger log = LoggerFactory.getLogger(SequenceValidator.class);
     private static final Set<Character> VALID_NUCLEOTIDES = new HashSet<>();
     private static final Set<Character> AMBIGUOUS_NUCLEOTIDES = new HashSet<>();
@@ -19,7 +20,6 @@ public class SequenceValidator {
         VALID_NUCLEOTIDES.add('T');
         VALID_NUCLEOTIDES.add('C');
         VALID_NUCLEOTIDES.add('G');
-
         // Nucleotídeos ambíguos
         AMBIGUOUS_NUCLEOTIDES.add('N'); // qualquer nucleotídeo
         AMBIGUOUS_NUCLEOTIDES.add('R'); // A ou G (purina)
@@ -36,9 +36,9 @@ public class SequenceValidator {
 
     private final String sequenceId;
     private final String originalSequence;
-    private String cleanedSequence;
     private final List<String> validationErrors;
     private final List<Integer> invalidPositions;
+    private String cleanedSequence;
     private int ambiguousCount;
 
     public SequenceValidator(String sequenceId, String sequence) {
@@ -56,13 +56,10 @@ public class SequenceValidator {
             cleanedSequence = "";
             return;
         }
-
         StringBuilder cleaned = new StringBuilder();
         String upperSequence = originalSequence.toUpperCase().trim();
-
         for (int i = 0; i < upperSequence.length(); i++) {
             char c = upperSequence.charAt(i);
-
             if (VALID_NUCLEOTIDES.contains(c)) {
                 cleaned.append(c);
             } else if (AMBIGUOUS_NUCLEOTIDES.contains(c)) {
@@ -73,18 +70,14 @@ public class SequenceValidator {
                 // Ignora caracteres inválidos como espaços, números, etc.
             }
         }
-
         cleanedSequence = cleaned.toString();
-
         // Adiciona erros de validação
         if (!invalidPositions.isEmpty()) {
             validationErrors.add("Caracteres inválidos encontrados nas posições: " + invalidPositions.size());
         }
-
         if (ambiguousCount > 0) {
             validationErrors.add("Nucleotídeos ambíguos encontrados: " + ambiguousCount);
         }
-
         double ambiguousPercentage = (double) ambiguousCount / cleanedSequence.length() * 100;
         if (ambiguousPercentage > 5.0) {
             validationErrors.add(String.format("Alta porcentagem de nucleotídeos ambíguos: %.1f%%", ambiguousPercentage));
@@ -98,16 +91,14 @@ public class SequenceValidator {
         log.info("Tamanho limpo: {}", cleanedSequence.length());
         log.info("Caracteres inválidos removidos: {}", invalidPositions.size());
         log.info("Nucleotídeos ambíguos: {}", ambiguousCount);
-
         if (validationErrors.isEmpty()) {
-            log.info("✅ Sequência válida!");
+            log.info("Sequência válida!");
         } else {
-            log.warn("⚠️  Problemas encontrados:");
+            log.warn("Problemas encontrados:");
             for (String error : validationErrors) {
                 log.warn("  - {}", error);
             }
         }
-        log.info("");
     }
 
     public String getCleanedSequence() {
@@ -130,4 +121,5 @@ public class SequenceValidator {
         if (cleanedSequence.isEmpty()) return 0.0;
         return (double) ambiguousCount / cleanedSequence.length() * 100;
     }
+
 }

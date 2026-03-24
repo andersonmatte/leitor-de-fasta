@@ -1,5 +1,9 @@
-package br.com.webmatte;
+package br.com.webmatte.analyzer;
 
+import br.com.webmatte.detector.MutationDetector;
+import br.com.webmatte.detector.ORFDetector;
+import br.com.webmatte.domain.SequenceMetrics;
+import br.com.webmatte.infra.*;
 import org.biojava.nbio.core.sequence.DNASequence;
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper;
 import org.slf4j.Logger;
@@ -28,12 +32,10 @@ public class FastaAnalyzer {
     public static void main(String[] args) {
         try {
             FastaAnalyzer analyzer = new FastaAnalyzer();
-
             if (args.length > 0) {
                 // Modo comando de linha
                 String filePath = args[0];
                 analyzer.loadFromFile(filePath);
-
                 if (args.length > 1 && args[1].equals("--all")) {
                     analyzer.analyzeAll();
                     if (args.length > 2) {
@@ -47,27 +49,27 @@ public class FastaAnalyzer {
                 Scanner scanner = new Scanner(System.in);
                 log.info("Digite o caminho do arquivo FASTA: ");
                 String filePath = scanner.nextLine();
-
                 analyzer.loadFromFile(filePath);
                 analyzer.showMenu();
                 scanner.close();
             }
-
         } catch (Exception e) {
             log.error("Erro durante a execução: {}", e.getMessage(), e);
         }
     }
 
+    private static void extracted(String sequenceId) {
+        log.info("Análise da sequência {} concluída!", sequenceId);
+    }
+
     public void loadFromFile(String filePath) throws IOException {
         log.info("Carregando arquivo FASTA: {}", filePath);
         File file = new File(filePath);
-
         if (!file.exists()) {
             throw new IOException("Arquivo não encontrado: " + filePath);
         }
-
         sequences = FastaReaderHelper.readFastaDNASequence(file);
-        log.info("✅ {} sequência(s) carregada(s) com sucesso!", sequences.size());
+        log.info("{} sequência(s) carregada(s) com sucesso!", sequences.size());
     }
 
     public void analyzeAll() {
@@ -75,86 +77,62 @@ public class FastaAnalyzer {
             log.info("Nenhuma sequência para analisar.");
             return;
         }
-
         log.info("=== INICIANDO ANÁLISE COMPLETA FASTA ===");
         log.info("Total de sequências: {}", sequences.size());
-
         int sequenceCount = 0;
-
         for (Map.Entry<String, DNASequence> entry : sequences.entrySet()) {
-
             sequenceCount++;
-
             String sequenceId = entry.getKey();
             DNASequence dnaSequence = entry.getValue();
-
             String sequence = dnaSequence
                     .getSequenceAsString()
                     .toUpperCase()
                     .trim();
-
             log.info("🧬 ANALISANDO SEQUÊNCIA {}/{}: {}",
                     sequenceCount,
                     sequences.size(),
                     sequenceId);
-
             if (log.isInfoEnabled()) {
                 log.info("{}", SEPARATOR_60);
             }
-
             // 1. Validação e limpeza
             SequenceValidator validator =
                     new SequenceValidator(sequenceId, sequence);
-
             validator.printValidationReport();
-
             // 2. Estatísticas básicas
             String cleanedSequence = validator.getCleanedSequence();
-
             if (cleanedSequence.isEmpty()) {
-                log.info("⚠️ Sequência vazia após validação. Pulando análise.");
+                log.info("Sequência vazia após validação. Pulando análise.");
                 continue;
             }
-
             SequenceStats stats =
                     new SequenceStats(sequenceId, cleanedSequence);
-
             stats.printBasicStats();
-
             // 3. Tradução DNA → Proteína
             ProteinTranslator translator =
                     new ProteinTranslator(cleanedSequence);
-
             translator.printTranslationReport();
-
             // 4. Busca por motifs
             MotifFinder motifFinder =
                     new MotifFinder(cleanedSequence);
-
             motifFinder.findStartCodons();
-
             // 5. Detecção de ORFs
             ORFDetector orfDetector =
                     new ORFDetector(cleanedSequence, 300);
-
             orfDetector.printORFReport();
-
             // 6. Sliding window
             if (cleanedSequence.length() > 1000) {
-
                 SlidingWindowAnalyzer windowAnalyzer =
                         new SlidingWindowAnalyzer(
                                 cleanedSequence,
                                 500,
                                 100
                         );
-
                 windowAnalyzer.printSlidingWindowReport();
                 windowAnalyzer.findStabilityRegions();
             }
-
             // 7. Métricas
-            MetricsExporter.SequenceMetrics metrics =
+            SequenceMetrics metrics =
                     MetricsExporter.createMetricsFromAnalysis(
                             sequenceId,
                             stats,
@@ -162,18 +140,13 @@ public class FastaAnalyzer {
                             orfDetector,
                             motifFinder
                     );
-
             metricsExporter.addSequenceMetrics(metrics);
-
             extracted(sequenceId);
-
             if (log.isInfoEnabled()) {
                 log.info("\n{}\n", SEPARATOR_80);
             }
         }
-
         log.info("🎉 ANÁLISE COMPLETA CONCLUÍDA!");
-
         metricsExporter.printSummary();
     }
 
@@ -182,40 +155,31 @@ public class FastaAnalyzer {
             log.info("Sequência não encontrada: {}", sequenceId);
             return;
         }
-
         DNASequence dnaSequence = sequences.get(sequenceId);
         String sequence = dnaSequence.getSequenceAsString().toUpperCase().trim();
-
         log.info("\uD83E\uDDEC ANALISANDO SEQUÊNCIA ESPECÍFICA: {}", sequenceId);
         if (log.isInfoEnabled()) {
             log.info("={}", "=".repeat(50));
         }
-
         // Análise completa da sequência específica
         SequenceValidator validator = new SequenceValidator(sequenceId, sequence);
         validator.printValidationReport();
-
         String cleanedSequence = validator.getCleanedSequence();
         if (!cleanedSequence.isEmpty()) {
             SequenceStats stats = new SequenceStats(sequenceId, cleanedSequence);
             stats.printBasicStats();
-
             ProteinTranslator translator = new ProteinTranslator(cleanedSequence);
             translator.printTranslationReport();
-
             MotifFinder motifFinder = new MotifFinder(cleanedSequence);
             motifFinder.findStartCodons();
             motifFinder.findStopCodons();
-
             ORFDetector orfDetector = new ORFDetector(cleanedSequence, 300);
             orfDetector.printORFReport();
-
             if (cleanedSequence.length() > 1000) {
                 SlidingWindowAnalyzer windowAnalyzer = new SlidingWindowAnalyzer(cleanedSequence, 500, 100);
                 windowAnalyzer.printSlidingWindowReport();
             }
         }
-
         extracted(sequenceId);
     }
 
@@ -224,10 +188,8 @@ public class FastaAnalyzer {
             log.info("Uma ou ambas as sequências não foram encontradas.");
             return;
         }
-
         String seq1 = sequences.get(seq1Id).getSequenceAsString();
         String seq2 = sequences.get(seq2Id).getSequenceAsString();
-
         MutationDetector.compareSequences(seq1, seq2, seq1Id, seq2Id);
     }
 
@@ -236,17 +198,14 @@ public class FastaAnalyzer {
             log.info("Nenhuma métrica para exportar. Execute a análise primeiro.");
             return;
         }
-
         // Exportar para diferentes formatos
         String csvFilename = baseFilename + ".csv";
         String jsonFilename = baseFilename + ".json";
         String reportFilename = baseFilename + "_report.txt";
-
         metricsExporter.exportToCSV(csvFilename);
         metricsExporter.exportToJSON(jsonFilename);
         metricsExporter.exportSummaryReport(reportFilename);
-
-        log.info("📊 Todos os arquivos de exportação foram gerados com sucesso!");
+        log.info("Todos os arquivos de exportação foram gerados com sucesso!");
         log.info("   - CSV: {}", csvFilename);
         log.info("   - JSON: {}", jsonFilename);
         log.info("   - Relatório: {}", reportFilename);
@@ -258,18 +217,15 @@ public class FastaAnalyzer {
             log.info("Nenhuma sequência carregada.");
             return;
         }
-
         for (Map.Entry<String, DNASequence> entry : sequences.entrySet()) {
             String sequenceId = entry.getKey();
             DNASequence seq = entry.getValue();
-
             log.info("{}: {} nucleotídeos", sequenceId, seq.getLength());
         }
     }
 
     public void showMenu() {
         Scanner scanner = new Scanner(System.in);
-
         while (true) {
             log.info("=== MENU DE ANÁLISE FASTA ===");
             log.info("1. Listar sequências");
@@ -279,11 +235,9 @@ public class FastaAnalyzer {
             log.info("5. Exportar métricas");
             log.info("6. Sair");
             log.info("Escolha uma opção: ");
-
             try {
                 int choice = scanner.nextInt();
                 scanner.nextLine(); // Consumir newline
-
                 switch (choice) {
                     case 1:
                         listSequences();
@@ -309,7 +263,7 @@ public class FastaAnalyzer {
                         exportMetrics(filename);
                         break;
                     case 6:
-                        log.info("👋 Encerrando o programa...");
+                        log.info("Encerrando o programa...");
                         scanner.close();
                         return;
                     default:
@@ -320,10 +274,6 @@ public class FastaAnalyzer {
                 scanner.nextLine(); // Limpar buffer
             }
         }
-    }
-
-    private static void extracted(String sequenceId) {
-        log.info("✅ Análise da sequência {} concluída!", sequenceId);
     }
 
 }

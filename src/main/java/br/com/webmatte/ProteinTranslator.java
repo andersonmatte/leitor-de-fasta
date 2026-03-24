@@ -19,6 +19,7 @@ public class ProteinTranslator {
     private String proteinSequence;
     private int validCodons;
     private int invalidCodons;
+
     public ProteinTranslator(String dnaSequence) {
         this.dnaSequence = dnaSequence.toUpperCase();
         this.validCodons = 0;
@@ -194,7 +195,8 @@ public class ProteinTranslator {
             log.info("");
         } else {
             log.info("Sequência proteica (primeiros 100 aa):");
-            log.info(proteinSequence.substring(0, 100) + "...");
+            String proteinSequenceSub = proteinSequence.substring(0, 100);
+            log.info(proteinSequenceSub, "...");
             log.info("");
         }
 

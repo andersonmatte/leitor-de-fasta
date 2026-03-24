@@ -34,11 +34,11 @@ public class SequenceValidator {
         AMBIGUOUS_NUCLEOTIDES.add('V'); // A ou C ou G
     }
 
-    private String sequenceId;
-    private String originalSequence;
+    private final String sequenceId;
+    private final String originalSequence;
     private String cleanedSequence;
-    private List<String> validationErrors;
-    private List<Integer> invalidPositions;
+    private final List<String> validationErrors;
+    private final List<Integer> invalidPositions;
     private int ambiguousCount;
 
     public SequenceValidator(String sequenceId, String sequence) {
